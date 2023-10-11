@@ -9,19 +9,29 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    checkout([$class: 'GitSCM', branches: [[name: 'main']], userRemoteConfigs: [[url: 'https://github.com/gpuli04/Jenkins-Sonarqube.git']])
-                }
+                // Check out the GitHub repository
+                checkout([$class: 'GitSCM', branches: [[name: 'main']], userRemoteConfigs: [[url: 'https://github.com/gpuli04/Jenkins-Sonarqube.git']])
             }
         }
 
-        // Rest of your stages...
+        stage('Build and Test') {
+            steps {
+                script {
+                    // Build the project (You may need to adjust the build command)
+                    sh 'msbuild YourSolution.sln'
 
-    }
+                    // Run the unit tests (You may need to adjust the test command)
+                    sh 'nunit YourTestProject.dll'
 
-    post {
-        always {
-            // Clean up and other post-build tasks
+                    // Generate a test report (if applicable)
+                    // nunit-console --result:TestResult.xml
+
+                    // Perform SonarQube code scanning
+                    withSonarQubeEnv('SonarQube') {
+                        sh "sonar-scanner -Dsonar.login=${SONARQUBE_TOKEN} -Dsonar.host.url=${SONARQUBE_SERVER}"
+                    }
+                }
+            }
         }
     }
 }
